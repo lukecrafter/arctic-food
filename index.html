@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>北極圈食堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;900&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: a field ledger — one narrow column, day-stamped rows, ballots as a row of five ink stamps */
+:root{
+  --bg:#eef2f2; --paper:#fbfcfc; --ink:#14232b; --muted:#5d6f78; --line:#d3dde0;
+  --accent:#c8472a; --accent-ink:#fff; --glacier:#2f6f86; --glacier-soft:#dcebf0;
+  --yes:#2e7d4f; --yes-soft:#dcefe3; --no:#b23a3a; --no-soft:#f6dede; --wait:#9a7a1c; --wait-soft:#f5ecd2;
+  --f-display:"Noto Serif TC","Songti TC",serif; --f-body:"Noto Sans TC","PingFang HK","Microsoft JhengHei",sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e171c; --paper:#15222a; --ink:#e4edf0; --muted:#93a6ae; --line:#26363f;
+  --accent:#ff7d57; --accent-ink:#1a0d08; --glacier:#7cc0d8; --glacier-soft:#1b3440;
+  --yes:#6fd197; --yes-soft:#16362a; --no:#ff8f8f; --no-soft:#3b1c1f; --wait:#e4c45f; --wait-soft:#352e17; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e171c; --paper:#15222a; --ink:#e4edf0; --muted:#93a6ae; --line:#26363f;
+  --accent:#ff7d57; --accent-ink:#1a0d08; --glacier:#7cc0d8; --glacier-soft:#1b3440;
+  --yes:#6fd197; --yes-soft:#16362a; --no:#ff8f8f; --no-soft:#3b1c1f; --wait:#e4c45f; --wait-soft:#352e17; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:760px;margin:0 auto;padding-block:20px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+h1{font-family:var(--f-display);font-weight:900;font-size:clamp(30px,7vw,44px);line-height:1.1;margin:0;letter-spacing:.02em}
+h2{font-family:var(--f-display);font-weight:600;font-size:19px;margin:0;text-wrap:balance}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.sub{color:var(--muted);margin:0}
+header{display:flex;flex-direction:column;gap:10px}
+.route{display:flex;flex-wrap:wrap;gap:6px;font-size:12.5px;color:var(--muted)}
+.route span{border:1px solid var(--line);border-radius:999px;padding:2px 9px;background:var(--paper)}
+.me{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.me b{font-size:13px;color:var(--muted);font-weight:500}
+.chip{font:inherit;font-size:14px;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:4px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip:focus-visible,button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--glacier);outline-offset:2px}
+nav.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;padding-top:6px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+nav.tabs button{font:inherit;font-weight:700;background:none;border:0;color:var(--muted);padding:8px 12px;border-bottom:3px solid transparent;cursor:pointer}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-color:var(--accent)}
+.notice{font-size:13px;border-radius:8px;padding:8px 12px;background:var(--wait-soft);color:var(--ink)}
+.stats{display:flex;flex-wrap:wrap;gap:8px}
+.stat{flex:1 1 120px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:flex;flex-direction:column}
+.stat .n{font-family:var(--f-mono);font-size:24px;line-height:1.1}
+.stat .l{font-size:12px;color:var(--muted)}
+.filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.filters .chip{white-space:nowrap;font-size:13px}
+.daygroup{display:flex;flex-direction:column;gap:10px}
+.dayhead{display:flex;align-items:baseline;gap:10px;border-top:2px solid var(--ink);padding-top:8px}
+.dayhead .d{font-family:var(--f-mono);font-size:15px}
+.dayhead .w{color:var(--muted);font-size:13px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.card.go{border-color:var(--yes)}
+.card.drop{opacity:.6}
+.top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.top h3{margin:0;font-size:16px;font-weight:700;min-width:0}
+.meta{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
+.note{font-size:13.5px;margin:0}
+.pill{font-size:12px;font-weight:700;border-radius:999px;padding:2px 10px;white-space:nowrap}
+.pill.yes{background:var(--yes-soft);color:var(--yes)}.pill.no{background:var(--no-soft);color:var(--no)}.pill.wait{background:var(--wait-soft);color:var(--wait)}.pill.booked{background:var(--glacier-soft);color:var(--glacier)}
+.ballot{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.stamp{font-size:12px;border-radius:6px;padding:2px 7px;border:1px dashed var(--line);color:var(--muted)}
+.stamp.y{border-style:solid;border-color:var(--yes);color:var(--yes);background:var(--yes-soft)}
+.stamp.n{border-style:solid;border-color:var(--no);color:var(--no);background:var(--no-soft)}
+.stamp.mine{font-weight:700}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:inherit;font-size:14px;font-weight:700;border-radius:8px;padding:6px 14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.btn.y[aria-pressed="true"]{background:var(--yes);border-color:var(--yes);color:var(--paper)}
+.btn.n[aria-pressed="true"]{background:var(--no);border-color:var(--no);color:var(--paper)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+a{color:var(--glacier)}
+.linkout{font-size:13px}
+.addbox{background:var(--paper);border:1px dashed var(--line);border-radius:12px;padding:12px 14px;font-size:13.5px;display:flex;flex-direction:column;gap:6px}
+.price{font-family:var(--f-mono);font-size:13px}
+.sync{font-size:12.5px;color:var(--muted)}
+details.add{background:var(--paper);border:1px dashed var(--line);border-radius:12px;padding:12px 14px}
+details.add summary{cursor:pointer;font-weight:700}
+form.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+form.grid label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);min-width:0}
+form.grid .full{grid-column:1/-1}
+input,select,textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:100%}
+@media (max-width:520px){form.grid{grid-template-columns:1fr}}
+/* meals */
+.mealday{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.mealday .act{font-size:13px;color:var(--muted)}
+.slot{display:grid;grid-template-columns:52px 1fr;gap:4px 10px;align-items:start}
+.slot .lbl{font-weight:700;font-size:13.5px;padding-top:4px}
+.slot .body{display:flex;flex-direction:column;gap:4px;min-width:0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;width:max-content}
+.seg button{font:inherit;font-size:13px;border:0;background:transparent;color:var(--ink);padding:4px 11px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--glacier);color:var(--paper)}
+.hint{font-size:12.5px;color:var(--muted)}
+.cands{display:flex;flex-wrap:wrap;gap:6px}
+.cand{font-size:12px;border-radius:6px;padding:1px 7px;background:var(--bg);border:1px solid var(--line)}
+.cand.go{border-color:var(--yes);color:var(--yes)}
+.runtag{font-family:var(--f-mono);font-size:11.5px;color:var(--glacier)}
+/* shop */
+.run{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.run .head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.run .cover{font-size:12.5px;color:var(--muted)}
+.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.items li{display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.items li.done span.name{text-decoration:line-through;color:var(--muted)}
+.items .qty{font-family:var(--f-mono);font-size:13px;white-space:nowrap}
+.items input{width:18px;height:18px;padding:0}
+.warn{font-size:13px;color:var(--ink);background:var(--wait-soft);border-radius:8px;padding:6px 10px;margin:0}
+.empty{color:var(--muted);font-size:13.5px}
+footer{font-size:12.5px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.card{transition:border-color .2s}}
+body{margin:0;-webkit-text-size-adjust:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>北極圈食堂</h1>
+    <p class="sub">5 人 · 冰島 30/10–9/11 · 芬蘭 9/11–14/11。全員喺 Google Sheet 填「Y」嘅餐廳先 book。</p>
+    <div class="route"><span>雷克雅未克</span><span>草帽山 Grundarfjörður</span><span>黃金圈</span><span>維克 Vík</span><span>赫本 Höfn</span><span>羅瓦涅米</span><span>赫爾辛基</span></div>
+    <div class="me" role="group" aria-label="揀你係邊個">
+      <b>我係</b>
+      <span id="voters" style="display:contents"></span>
+    </div>
+    <p class="notice" id="dbnote" hidden></p>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="t-vote" aria-selected="true" data-tab="vote">投票</button>
+    <button role="tab" id="t-meal" aria-selected="false" data-tab="meal">每日食咩</button>
+    <button role="tab" id="t-shop" aria-selected="false" data-tab="shop">買餸</button>
+  </nav>
+
+  <section id="p-vote" class="daygroup" style="gap:18px">
+    <div class="stats" id="stats"></div>
+    <p class="sync" id="sync"></p>
+    <div class="filters" id="filters"></div>
+    <div id="placelist" class="daygroup" style="gap:18px"><p class="empty">載入緊候選餐廳…</p></div>
+    <div class="addbox"><b>想加餐廳？</b> 喺 Google Sheet 最底加一行（日期、餐、名、Google Maps link、Threads / blog link），叫 Cheuk 同步就會出現喺度。<a id="sheetlink" target="_blank" rel="noopener">打開投票 Sheet ↗</a></div>
+  </section>
+
+  <section id="p-meal" class="daygroup" hidden></section>
+  <section id="p-shop" class="daygroup" hidden></section>
+
+  <footer>營業時間來自 Google Maps（29/10 查），已對返我哋去嗰日係星期幾。淡季可能臨時改，出發前一日再 check。價錢係估算，每人食物，未計飲品。</footer>
+</div>
+
+<script>
+const VOTERS=[{k:"roy",n:"Roy"},{k:"mark",n:"Mark"},{k:"cheuk",n:"Cheuk"},{k:"andrew",n:"Andrew"},{k:"fatboy",n:"Fat Boy"}];
+const AREAS={rvk:"雷克雅未克",snae:"斯奈山半島",gc:"黃金圈",vik:"維克一帶",hofn:"赫本 / 冰河湖",rov:"羅瓦涅米",hel:"赫爾辛基"};
+const SLOTN={b:"早餐",l:"午餐",d:"晚餐",x:"小食/宵夜"};
+const DAYS=[
+ {d:"30/10",w:"五",area:"rvk",act:"Cheuk、Andrew 18:20 到；其他人 23:55 到",sleep:"雷克雅未克"},
+ {d:"31/10",w:"六",area:"rvk",act:"拎車、行市中心、超市買兩日嘢食、20:30 極光團",sleep:"雷克雅未克"},
+ {d:"1/11",w:"日",area:"snae",act:"斯奈山半島 road trip",sleep:"Grundarfjörður（有廚房）"},
+ {d:"2/11",w:"一",area:"gc",act:"14:00 Silfra 浮潛，返雷克雅未克",sleep:"雷克雅未克 3房（有廚房）"},
+ {d:"3/11",w:"二",area:"gc",act:"黃金圈 road trip",sleep:"雷克雅未克 3房"},
+ {d:"4/11",w:"三",area:"vik",act:"09:00 藍湖 → 揸車去維克",sleep:"維克公寓"},
+ {d:"5/11",w:"四",area:"vik",act:"13:00 Skaftafell 冰川健行（維克單程約 2 粒鐘）",sleep:"維克公寓"},
+ {d:"6/11",w:"五",area:"vik",act:"15:00 飛機殘骸接駁車",sleep:"維克公寓"},
+ {d:"7/11",w:"六",area:"hofn",act:"13:30 Crystal 冰洞 → Höfn",sleep:"Höfn Skyjaborg Apartment"},
+ {d:"8/11",w:"日",area:"hofn",act:"Höfn → 雷克雅未克（7 粒鐘＋）",sleep:"雷克雅未克（未 book）"},
+ {d:"9/11",w:"一",area:"rov",act:"10:00 KEF 起飛 → 17:45 到羅瓦涅米",sleep:"羅瓦涅米"},
+ {d:"10/11",w:"二",area:"rov",act:"羅瓦涅米全日",sleep:"羅瓦涅米"},
+ {d:"11/11",w:"三",area:"rov",act:"18:25 飛赫爾辛基（19:45 到）",sleep:"赫爾辛基"},
+ {d:"12/11",w:"四",area:"hel",act:"赫爾辛基",sleep:"赫爾辛基"},
+ {d:"13/11",w:"五",area:"hel",act:"赫爾辛基",sleep:"赫爾辛基"},
+ {d:"14/11",w:"六",area:"hel",act:"16:00 HEL → LHR",sleep:"—"}
+];
+const DAYIDX=Object.fromEntries(DAYS.map((x,i)=>[x.d,i]));
+// meals: id, day, slot, default mode, shopping run, hint
+const MEALS=[
+ ["m00","30/10","d","out",null,"Cheuk、Andrew 落機入城約 19:30，揀一間食晚飯"],
+ ["m01","30/10","x","cook","R0","夜機嗰三個到埗超市已關：倫敦帶杯麵 / 公仔麵去 airbnb"],
+ ["m02","31/10","b","out",null,"09:00 出發拎車：早起嗰個去 Brauð & Co / 280 外賣，或者返嚟 10:30 去 Sandholt"],
+ ["m03","31/10","l","out",null,"行市中心順路"],
+ ["m04","31/10","d","out",null,"20:30 極光團：17:30–19:30 食，揀熱、快、唔使訂嘅；之後要企喺外面幾粒鐘"],
+ ["m05","1/11","b","cook","R1","08:00 出門：31 號晚準備好，拎住上車食；09:30 Borgarnes 停 Geirabakarí 飲咖啡"],
+ ["m06","1/11","l","out",null,"12:15–13:30 Arnarstapi：Stapinn / Snjófell，或者 5 分鐘車程嘅 Fjöruhúsið"],
+ ["m07","1/11","d","cook","R1","自己煮：31 號買定。Grundarfjörður 間 Kjörbúðin 星期日 12:00–17:00，評論話雪櫃唔夠凍"],
+ ["m08","2/11","b","cook","R1",""],
+ ["m09","2/11","l","picnic","R1","14:00 浮潛前要食飽，Þingvellir 附近冇乜食"],
+ ["m10","2/11","d","cook","R2","3 房大屋：火鍋 / 煮飯夜"],
+ ["m11","3/11","b","cook","R2",""],
+ ["m12","3/11","l","out",null,"Friðheimar 要 book"],
+ ["m13","3/11","d","cook","R2",""],
+ ["m14","4/11","b","cook","R2","09:00 藍湖，早啲食"],
+ ["m15","4/11","l","out",null,"藍湖 café 或者路經 Selfoss / Hvolsvöllur"],
+ ["m16","4/11","d","cook","R3","到維克先去 Krónan 大買"],
+ ["m17","5/11","b","cook","R3",""],
+ ["m18","5/11","l","picnic","R3","Skaftafell 遊客中心 café 冬天關；最近係 5km 外 Freysnes"],
+ ["m19","5/11","d","out",null,""],
+ ["m20","6/11","b","cook","R3",""],
+ ["m21","6/11","l","out",null,"15:00 接駁車之前"],
+ ["m22","6/11","d","cook","R3",""],
+ ["m23","7/11","b","cook","R3","維克 → 冰洞約 2.5 粒鐘"],
+ ["m24","7/11","l","picnic","R3","13:30 冰洞前；Hali 喺冰河湖東 13km"],
+ ["m25","7/11","d","out",null,"龍蝦之都，揀一餐好啲"],
+ ["m26","8/11","b","cook","R4","7 粒鐘車程，早出發"],
+ ["m27","8/11","l","out","R4","路經維克 / Freysnes"],
+ ["m28","8/11","d","out","R4","星期日夜到，住宿未 book，未知有冇廚房"],
+ ["m29","9/11","b","cook","R4","10:00 飛，07:30 前要出門"],
+ ["m30","9/11","l","out",null,"機場 / 赫爾辛基轉機"],
+ ["m31","9/11","d","out",null,"17:45 落機"],
+ ["m32","10/11","b","cook","R5",""],
+ ["m33","10/11","l","out",null,"平日 lunch buffet（lounas）最抵"],
+ ["m34","10/11","d","cook","R5",""],
+ ["m35","11/11","b","cook","R5",""],
+ ["m36","11/11","l","out",null,""],
+ ["m37","11/11","d","out",null,"19:45 到赫爾辛基，食簡單啲"],
+ ["m38","12/11","b","cook","R6",""],
+ ["m39","12/11","l","out",null,"Old Market Hall 傍晚就收"],
+ ["m40","12/11","d","out",null,""],
+ ["m41","13/11","b","cook","R6",""],
+ ["m42","13/11","l","out",null,""],
+ ["m43","13/11","d","cook","R6",""],
+ ["m44","14/11","b","cook","R6",""],
+ ["m45","14/11","l","out",null,"16:00 機，13:30 前出發去機場"]
+].map(([id,day,slot,def,run,hint])=>({id,day,slot,def,run,hint}));
+
+const RUNS={
+ R0:{t:"倫敦帶去",where:"出發前喺倫敦超市 / 唐人超市買",when:"29/10 前",warn:"記住只帶冇肉冇奶嘅麵（英國 Halal 版辛辣麵、Tangle、Chapagetti 都得，出前一丁日本版有豬肉唔好帶）。"},
+ R1:{t:"雷克雅未克大買",where:"Bónus / Krónan（雷克雅未克）",when:"31/10（六）下晝，17:00 晚飯前",warn:"包埋 1/11 早餐（前一晚準備好拎住走）同 1/11 晚餐。Bónus 星期六大約 18:30 收，晚飯同極光團之前要買完；凍嘢擺車尾箱都夠凍。"},
+ R2:{t:"雷克雅未克補貨",where:"Krónan / Bónus（雷克雅未克）",when:"2/11（一）浮潛返嚟",warn:"Bónus 大約 18:30–19:00 收，Krónan 開到 20:00–21:00。"},
+ R3:{t:"維克大買（3 晚）",where:"Krónan Vík",when:"4/11（三）到維克",warn:"維克之後下一間大超市係 272km 外嘅 Höfn，5–7/11 嘅野餐都喺度買埋。"},
+ R4:{t:"赫本補貨",where:"Nettó Höfn",when:"7/11（六）冰洞之後",warn:"8/11 星期日成日揸車，路上車油站可以買熱湯。"},
+ R5:{t:"羅瓦涅米",where:"K-Market / S-Market（市中心）",when:"9/11（一）落機後",warn:"如果住宿冇廚房，喺「每日食咩」改晒做出街，清單會自動清零。"},
+ R6:{t:"赫爾辛基",where:"K-Market / Alepa",when:"11/11（三）夜或 12/11 朝早",warn:""}
+};
+// per person per meal
+const RECIPE={
+ cookb:[["bread","方包（片）",2],["egg","雞蛋（隻）",1],["skyr","Skyr 乳酪（杯）",1],["milk","牛奶（L）",0.2],["fruit","生果（個）",1]],
+ picnic:[["bread","方包（片）",3],["ham","火腿 / 凍肉（g）",50],["cheese","芝士（g）",30],["fruit","生果（個）",1],["bar","朱古力 / 能量棒（條）",1]],
+ cookd:[["carb","意粉 / 米 / 麵（g）",110],["protein","肉 / 三文魚（g）",200],["veg","菜 / 薯仔 / 洋蔥（g）",250],["sauce","醬 / 湯底（份）",0.2]],
+ cookx:[["cup","杯麵 / 公仔麵（個）",1]]
+};
+const PACK={bread:{u:14,label:n=>`${n} 條方包`},egg:{u:10,label:n=>`${n} 盒 ×10 蛋`},skyr:{u:1,label:n=>`${n} 杯`},milk:{u:1,label:n=>`${n} L`},fruit:{u:1,label:n=>`${n} 個`},
+ ham:{u:150,label:n=>`${n} 包 ×150g`},cheese:{u:300,label:n=>`${n} 包 ×300g`},bar:{u:1,label:n=>`${n} 條`},carb:{u:500,label:n=>`${n} 包 ×500g`},
+ protein:{u:500,label:n=>`${(n*0.5).toFixed(1)} kg`},veg:{u:500,label:n=>`${(n*0.5).toFixed(1)} kg`},sauce:{u:1,label:n=>`${n} 樽 / 包`},cup:{u:1,label:n=>`${n} 個`}};
+const STAPLES={R1:["牛油","即溶咖啡 / 茶包","鹽、黑椒、煮食油","保溫壺用熱朱古力粉","垃圾袋 / 保鮮袋"],R3:["牛油（補）","零食：薯片、朱古力（3 日揸車）"],R5:["牛油 / 茶包"],R6:["咖啡 / 茶包"]};
+const PEOPLE=5;
+
+/* ---------- data (synced from Google Sheet by Claude) ---------- */
+const SHEET="https://docs.google.com/spreadsheets/d/1HDFnw5BUMCvJBkiUfIBh6aDTQUqLyKZvfxndzuCDUE4/edit";
+const VCOL={roy:"H",mark:"I",cheuk:"J",andrew:"K",fatboy:"L"};
+let SYNCED="讀緊…";
+const PLACES=[{"id": "r-streetfood", "day": "30/10", "slot": "d", "name": "Icelandic Street Food", "area": "rvk", "local": "ISK 3,250", "gbp": 19, "hkd": 200, "book": false, "note": "Lækjargata 8，麵包碗羊肉湯 / 番茄湯可以免費添，仲有免費窩夫", "src": "https://travelpal.ai/destinations/europe/iceland/capital-region/reykjavik/icelandic-street-food-laekjargata-8", "map": "https://www.google.com/maps/search/?api=1&query=Icelandic%20Street%20Food%20Reykjavik", "row": 2, "hours": "11:00–22:00", "voters": ["cheuk", "andrew"], "votes": {}}, {"id": "r-svarta", "day": "30/10", "slot": "d", "name": "Svarta Kaffið", "area": "rvk", "local": "ISK 2,900", "gbp": 17, "hkd": 175, "book": false, "note": "Laugavegur 54，麵包碗湯，一肉一素", "src": "https://www.tripadvisor.com/Restaurant_Review-g189970-d1487023-Reviews-Svarta_Kaffid-Reykjavik_Capital_Region.html", "map": "https://www.google.com/maps/search/?api=1&query=Svarta%20Kaffi%C3%B0%20Reykjavik", "row": 3, "hours": "11:30–22:00", "voters": ["cheuk", "andrew"], "votes": {}}, {"id": "r-saegreifinn", "day": "30/10", "slot": "d", "name": "Sægreifinn 海鮮老伯", "area": "rvk", "local": "ISK 2,800", "gbp": 16, "hkd": 165, "book": false, "note": "舊港口龍蝦湯、燒魚串；17:00–18:00 休息", "src": "https://tablejourney.com/iceland/reykjavik/budget-eating/saegreifinn-budget/", "map": "https://www.google.com/maps/search/?api=1&query=S%C3%A6greifinn%20Reykjavik", "row": 4, "hours": "11:30–17:00, 18:00–22:00", "voters": ["cheuk", "andrew"], "votes": {}}, {"id": "r-rvkkitchen", "day": "30/10", "slot": "d", "name": "Reykjavik Kitchen", "area": "rvk", "local": "ISK 5,500", "gbp": 32, "hkd": 335, "book": true, "note": "Rauðarárstígur 8，冰島菜（北極紅點鮭、羊膝）；好多人，要訂位", "src": "https://wanderlog.com/place/details/750406", "map": "https://www.google.com/maps/search/?api=1&query=Reykjavik%20Kitchen%20Reykjavik", "row": 5, "hours": "11:30–15:00, 17:00–22:00", "voters": ["cheuk", "andrew"], "votes": {}}, {"id": "r-caruso", "day": "30/10", "slot": "d", "name": "Caruso", "area": "rvk", "local": "ISK 5,000", "gbp": 29, "hkd": 300, "book": true, "note": "Austurstræti 22，市中心意大利菜老店", "src": "https://wanderlog.com/place/details/1396018", "map": "https://www.google.com/maps/search/?api=1&query=Caruso%20Reykjavik", "row": 6, "hours": "11:30–23:30", "voters": ["cheuk", "andrew"], "votes": {}}, {"id": "b-braud", "day": "31/10", "slot": "b", "name": "Brauð & Co", "area": "rvk", "local": "ISK 1,700", "gbp": 10, "hkd": 105, "book": false, "note": "Frakkastígur 16，近大教堂；招牌肉桂卷、Hjónabandssæla。外賣為主，冇乜位，早去免賣晒", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=Brau%C3%B0%20%26%20Co%20Frakkast%C3%ADgur%20Reykjavik", "row": 7, "hours": "06:30–17:00", "voters": null, "votes": {}}, {"id": "b-280", "day": "31/10", "slot": "b", "name": "280 Bakery", "area": "rvk", "local": "ISK 2,000", "gbp": 12, "hkd": 125, "book": false, "note": "Klapparstígur 37，前 Brauð & Co 師傅開；牛角包、Giffill、番茄 feta 早餐包。得兩張高凳", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=280%20Bakery%20Klapparst%C3%ADgur%20Reykjavik", "row": 8, "hours": "07:00–17:00", "voters": null, "votes": {}}, {"id": "b-sandholt", "day": "31/10", "slot": "b", "name": "Sandholt", "area": "rvk", "local": "ISK 4,100", "gbp": 24, "hkd": 250, "book": false, "note": "Laugavegur 36，1920 年老店；丹麥酥、杏仁牛角包、shakshuka 熱食。坐得落 5 個，星期六要等位", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=Sandholt%20Laugavegur%2036%20Reykjavik", "row": 9, "hours": "07:30–18:00", "voters": null, "votes": {}}, {"id": "b-hygge", "day": "31/10", "slot": "b", "name": "Hygge kaffi og bakarí", "area": "rvk", "local": "ISK 1,700", "gbp": 10, "hkd": 105, "book": false, "note": "Barónsstígur 6；火腿芝士牛角包、sourdough plate。有位坐，離市中心遠少少", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=Hygge%20kaffi%20og%20bakar%C3%AD%20Bar%C3%B3nsst%C3%ADgur%20Reykjavik", "row": 10, "hours": "08:00–17:00", "voters": null, "votes": {}}, {"id": "b-aurora", "day": "31/10", "slot": "b", "name": "Sweet Aurora", "area": "rvk", "local": "ISK 2,600", "gbp": 15, "hkd": 155, "book": false, "note": "Bergstaðastræti 14，法式甜品；canelé、tiramisu、Volcano macaron。10:00 先開，做下晝茶更啱", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=Sweet%20Aurora%20Reykjavik%20Bergsta%C3%B0astr%C3%A6ti", "row": 11, "hours": "10:00–18:00", "voters": null, "votes": {}}, {"id": "l-posthus", "day": "31/10", "slot": "l", "name": "Pósthús Food Hall & Bar", "area": "rvk", "local": "ISK 3,400", "gbp": 20, "hkd": 210, "book": false, "note": "Pósthússtræti 5，舊郵局改建；炸魚薯條、意粉、tacos、拉麵、smash burger，各自揀再坐埋", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=P%C3%B3sth%C3%BAs%20Food%20Hall%20Reykjavik", "row": 12, "hours": "11:30–22:00", "voters": null, "votes": {}}, {"id": "l-bakabaka", "day": "31/10", "slot": "l", "name": "BakaBaka", "area": "rvk", "local": "ISK 3,800", "gbp": 22, "hkd": 230, "book": false, "note": "Bankastræti 2，1834 年木屋；酸種 pizza、Kleinur 炸冬甩、黑麥三文治", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=BakaBaka%20Bankastr%C3%A6ti%20Reykjavik", "row": 13, "hours": "08:00–22:00", "voters": null, "votes": {}}, {"id": "l-svarta31", "day": "31/10", "slot": "l", "name": "Svarta Kaffið（31 號全組版）", "area": "rvk", "local": "ISK 3,000", "gbp": 19, "hkd": 200, "book": false, "note": "Laugavegur 54 二樓；每日一肉一素麵包碗湯。30 號 Cheuk、Andrew 嗰票係另一行", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=Svarta%20Kaffi%C3%B0%20Reykjavik", "row": 14, "hours": "11:30–22:00", "voters": null, "votes": {}}, {"id": "l-hlemmur", "day": "31/10", "slot": "l", "name": "Hlemmur Mathöll", "area": "rvk", "local": "ISK 3,100", "gbp": 18, "hkd": 185, "book": false, "note": "Laugavegur 107 舊巴士站改美食廣場；炸魚薯條、越南粉、pizza、gelato", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=Hlemmur%20Math%C3%B6ll%20Reykjavik", "row": 15, "hours": "11:00–22:00", "voters": null, "votes": {}}, {"id": "l-grandi", "day": "31/10", "slot": "l", "name": "Grandi Mathöll", "area": "rvk", "local": "ISK 3,100", "gbp": 18, "hkd": 185, "book": false, "note": "Grandagarður 16 漁港；羊肉串、炸魚、意粉；近 Sægreifinn 同舊港口", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=Grandi%20Math%C3%B6ll%20Reykjavik", "row": 16, "hours": "11:00–21:00", "voters": null, "votes": {}}, {"id": "d-isf31", "day": "31/10", "slot": "d", "name": "Icelandic Street Food（31 號全組版）", "area": "rvk", "local": "ISK 3,250", "gbp": 19, "hkd": 200, "book": false, "note": "Lækjargata 8；麵包碗羊肉湯 / 番茄湯免費添。唔使訂、上菜快，熱湯落肚先去等極光最啱", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=Icelandic%20Street%20Food%20Reykjavik", "row": 17, "hours": "11:00–22:00", "voters": null, "votes": {}}, {"id": "d-sae31", "day": "31/10", "slot": "d", "name": "Sægreifinn（31 號全組版）", "area": "rvk", "local": "ISK 2,800", "gbp": 16, "hkd": 165, "book": false, "note": "Geirsgata 4a 舊港口；龍蝦湯、燒魚串。17:00–18:00 休息，18:00 再開，食完 19:30 剛好", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=S%C3%A6greifinn%20Reykjavik", "row": 18, "hours": "11:30–17:00, 18:00–22:00", "voters": null, "votes": {}}, {"id": "d-rk31", "day": "31/10", "slot": "d", "name": "Reykjavik Kitchen（31 號全組版）", "area": "rvk", "local": "ISK 5,500", "gbp": 32, "hkd": 335, "book": true, "note": "Rauðarárstígur 8；想坐低食正式冰島菜就揀呢間，要訂 17:00–17:30 開餐先趕得切 20:30", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=Reykjavik%20Kitchen%20Reykjavik", "row": 19, "hours": "11:30–15:00, 17:00–22:00", "voters": null, "votes": {}}, {"id": "d-popolare", "day": "31/10", "slot": "d", "name": "Pizza Popolare（Pósthús 入面）", "area": "rvk", "local": "ISK 3,500", "gbp": 20, "hkd": 210, "book": false, "note": "Pósthús 美食廣場入面，柴火 pizza、前菜；counter 落單，17:30 坐低，快又舒服", "src": "http://www.pizzapopolare.is/", "map": "https://www.google.com/maps/search/?api=1&query=Pizza%20Popolare%20P%C3%B3sth%C3%BAs%20Reykjavik", "row": 20, "hours": "11:30–22:00", "voters": null, "votes": {}}, {"id": "d-padre", "day": "31/10", "slot": "d", "name": "Padre Pizza", "area": "rvk", "local": "ISK 3,500", "gbp": 20, "hkd": 210, "book": false, "note": "Laugavegur 30，酸種餅底 pizza、calzone；17:30 入座", "src": "https://padrepizza.is/", "map": "https://www.google.com/maps/search/?api=1&query=Padre%20Pizza%20Laugavegur%2030%20Reykjavik", "row": 21, "hours": "11:00–23:00", "voters": null, "votes": {}}, {"id": "d-islenski", "day": "31/10", "slot": "d", "name": "Íslenski Barinn", "area": "rvk", "local": "ISK 4,000", "gbp": 24, "hkd": 250, "book": false, "note": "Ingólfsstræti 1a；羊膝、羊肉湯、fish of the day、熱狗。18:00 要排 30 分鐘，17:00 去；開到 03:00，極光團返嚟仲食得", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=%C3%8Dslenski%20Barinn%20Reykjavik", "row": 22, "hours": "11:00–03:00", "voters": null, "votes": {}}, {"id": "d-chips", "day": "31/10", "slot": "d", "name": "Reykjavík Chips", "area": "rvk", "local": "ISK 2,800", "gbp": 16, "hkd": 165, "book": false, "note": "Vitastígur 10；漢堡、粗薯條、炸魚薯條。平、快，趕時間首選", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=Reykjav%C3%ADk%20Chips%20Vitast%C3%ADgur%20Reykjavik", "row": 23, "hours": "11:30–23:00", "voters": null, "votes": {}}, {"id": "x-bbp", "day": "31/10", "slot": "x", "name": "Bæjarins Beztu Pylsur 熱狗", "area": "rvk", "local": "ISK 1,800", "gbp": 10, "hkd": 105, "book": false, "note": "Tryggvagata 1，冰島熱狗，叫「with everything」，一隻約 ISK 900、兩隻當一餐。排隊快；極光團返嚟凌晨都仲開", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=B%C3%A6jarins%20Beztu%20Pylsur%20Tryggvagata%20Reykjavik", "row": 24, "hours": "09:00–06:00", "voters": null, "votes": {}}, {"id": "s-fjoruhusid", "day": "1/11", "slot": "l", "name": "Fjöruhúsið（Hellnar 海邊 café）", "area": "snae", "local": "ISK 3,000", "gbp": 17, "hkd": 175, "book": false, "note": "魚湯＋自家麵包；冬天 11:00–20:00", "src": "https://guidetoiceland.is/best-of-iceland/the-best-cafes-and-coffee-shops-on-snaefellsnes", "map": "https://www.google.com/maps/search/?api=1&query=Fj%C3%B6ruh%C3%BAsi%C3%B0%20Hellnar", "row": 25, "hours": "Google Maps 冇寫，要 check", "voters": null, "votes": {}}, {"id": "s-stapinn", "day": "1/11", "slot": "l", "name": "Stapinn", "area": "snae", "local": "ISK 3,500", "gbp": 20, "hkd": 210, "book": false, "note": "Arnarstapi；羊肉湯、海鮮湯、炸魚薯條、蘋果批。評論話價錢合理，旅行團到會突然好多人", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=Stapinn%20Arnarstapi", "row": 26, "hours": "11:00–16:00", "voters": null, "votes": {}}, {"id": "s-snjofell", "day": "1/11", "slot": "l", "name": "Snjófell Restaurant", "area": "snae", "local": "ISK 3,850", "gbp": 22, "hkd": 230, "book": false, "note": "Arnarstapi Center 入面，位多、望山景；海鮮湯 ISK 3,850。評論話份量細、偏貴", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=Snj%C3%B3fell%20Restaurant%20Arnarstapi", "row": 27, "hours": "11:00–20:00", "voters": null, "votes": {}}, {"id": "s-geira", "day": "1/11", "slot": "x", "name": "Geirabakarí Kaffihús（Borgarnes）", "area": "snae", "local": "ISK 1,500", "gbp": 9, "hkd": 95, "book": false, "note": "Borgarnes 09:30 補給站，望山海；大肉桂卷 Snúður、咖啡。就喺 Bónus 隔籬，排隊可能慢", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=Geirabakar%C3%AD%20Kaffih%C3%BAs%20Borgarnes", "row": 28, "hours": "09:00–16:00（星期日）", "voters": null, "votes": {}}, {"id": "g-fridheimar", "day": "3/11", "slot": "l", "name": "Friðheimar 番茄溫室", "area": "gc", "local": "ISK 4,000", "gbp": 23, "hkd": 240, "book": true, "note": "溫室入面食番茄湯任添麵包；11:30/12:00–16:00，要訂位", "src": "https://www.dineout.is/fridheimar", "map": "https://www.google.com/maps/search/?api=1&query=Fri%C3%B0heimar%20Reykholt", "row": 29, "hours": "Google Maps 只見旁邊 wine bar 12:00–22:00；溫室餐廳要 check", "voters": null, "votes": {}}, {"id": "n-husmals", "day": "3/11", "slot": "x", "name": "Hús Máls og Menningar（書店酒吧）", "area": "rvk", "local": "ISK 1,700", "gbp": 10, "hkd": 105, "book": false, "note": "Laugavegur 18 舊書店變酒吧，每晚約 20:00–23:00 有 live band；飲嘢為主。31 號撞極光團，改 2 或 3 號夜", "src": null, "map": "https://www.google.com/maps/search/?api=1&query=H%C3%BAs%20M%C3%A1ls%20og%20Menningar%20Laugavegur%2018%20Reykjavik", "row": 30, "hours": "12:00–00:00", "voters": null, "votes": {}}, {"id": "v-halldors", "day": "4/11", "slot": "d", "name": "Halldórskaffi", "area": "vik", "local": "ISK 5,000", "gbp": 29, "hkd": 300, "book": false, "note": "北極紅點鮭、羊、pizza；12:00–21:00", "src": "https://www.icelandtours.is/blog/best-restaurants-in-iceland", "map": "https://www.google.com/maps/search/?api=1&query=Halld%C3%B3rskaffi%20V%C3%ADk", "row": 31, "hours": "12:00–21:00", "voters": null, "votes": {}}, {"id": "sk-freysnes", "day": "5/11", "slot": "l", "name": "Freysnes 餐廳＋超市", "area": "vik", "local": "ISK 3,000", "gbp": 17, "hkd": 175, "book": false, "note": "Skaftafell café 冬天關，最近就係呢度，仲可以入油", "src": "https://icelandictimes.com/?p=55371", "map": "https://www.google.com/maps/search/?api=1&query=Freysnes%20Restaurant%20Iceland", "row": 32, "hours": "09:00–20:00", "voters": null, "votes": {}}, {"id": "v-smidjan", "day": "5/11", "slot": "d", "name": "Smiðjan Brugghús", "area": "vik", "local": "ISK 4,500", "gbp": 26, "hkd": 270, "book": false, "note": "自家 craft beer，漢堡、雞翼", "src": "https://www.fodors.com/world/europe/iceland/golden-circle/vik/restaurants", "map": "https://www.google.com/maps/search/?api=1&query=Smi%C3%B0jan%20Bruggh%C3%BAs%20V%C3%ADk", "row": 33, "hours": "12:00–22:00", "voters": null, "votes": {}}, {"id": "v-blackcrust", "day": "6/11", "slot": "l", "name": "Black Crust Pizzeria", "area": "vik", "local": "ISK 2,700", "gbp": 16, "hkd": 165, "book": false, "note": "黑色餅底 pizza，全年開", "src": "https://guidetoiceland.is/best-of-iceland/best-restaurants-in-vik", "map": "https://www.google.com/maps/search/?api=1&query=Black%20Crust%20Pizzeria%20V%C3%ADk", "row": 34, "hours": "12:00–21:00", "voters": null, "votes": {}}, {"id": "v-sudurvik", "day": "6/11", "slot": "d", "name": "Suður-Vík", "area": "vik", "local": "ISK 5,500", "gbp": 32, "hkd": 335, "book": false, "note": "山坡老屋望海，pizza、咖喱、羊；唔接受訂位，walk-in", "src": "https://guidetoiceland.is/best-of-iceland/best-restaurants-in-vik", "map": "https://www.google.com/maps/search/?api=1&query=Su%C3%B0ur-V%C3%ADk%20V%C3%ADk", "row": 35, "hours": "12:00–21:00", "voters": null, "votes": {}}, {"id": "h-hali", "day": "7/11", "slot": "l", "name": "Þórbergssetur Hali", "area": "hofn", "local": "ISK 5,000", "gbp": 29, "hkd": 300, "book": false, "note": "冰河湖東 13km，北極紅點鮭", "src": "https://www.lonelyplanet.com/iceland/southeast-iceland/restaurants", "map": "https://www.google.com/maps/search/?api=1&query=%C3%9E%C3%B3rbergssetur%20Hali%20Iceland", "row": 36, "hours": "09:00–21:00", "voters": null, "votes": {}}, {"id": "h-pakkhus", "day": "7/11", "slot": "d", "name": "Pakkhús", "area": "hofn", "local": "ISK 8,000", "gbp": 47, "hkd": 490, "book": false, "note": "龍蝦之都必食；唔收訂位，12:00 一開門就去最穩", "src": "https://south.is/en/food-accommodation/food/restaurants/pakkhus-restaurant", "map": "https://www.google.com/maps/search/?api=1&query=Pakkh%C3%BAs%20H%C3%B6fn", "row": 37, "hours": "12:00–21:30", "voters": null, "votes": {}}, {"id": "h-humar", "day": "7/11", "slot": "d", "name": "Humarhöfnin", "area": "hofn", "local": "ISK 8,500", "gbp": 50, "hkd": 520, "book": true, "note": "龍蝦專門店；冬天開唔開要 check", "src": "https://grapevine.is/?p=10001963", "map": "https://www.google.com/maps/search/?api=1&query=Humarh%C3%B6fnin%20H%C3%B6fn", "row": 38, "hours": "Google Maps 冇寫，要 check", "voters": null, "votes": {}}, {"id": "h-hafnarbudin", "day": "8/11", "slot": "l", "name": "Hafnarbúðin", "area": "hofn", "local": "ISK 3,000", "gbp": 17, "hkd": 175, "book": false, "note": "港口 diner，龍蝦 baguette，外賣上車食", "src": "https://visitvatnajokull.is/?p=158560", "map": "https://www.google.com/maps/search/?api=1&query=Hafnarb%C3%BA%C3%B0in%20H%C3%B6fn", "row": 39, "hours": "11:30–21:00", "voters": null, "votes": {}}, {"id": "r-mandi", "day": "8/11", "slot": "d", "name": "Mandi", "area": "rvk", "local": "ISK 2,100", "gbp": 12, "hkd": 125, "book": false, "note": "中東 shawarma，開到好夜", "src": "https://tablejourney.com/iceland/reykjavik/budget-eating/", "map": "https://www.google.com/maps/search/?api=1&query=Mandi%20Reykjavik", "row": 40, "hours": "11:00–01:30", "voters": null, "votes": {}}, {"id": "rv-nili", "day": "9/11", "slot": "d", "name": "Nili", "area": "rov", "local": "€45", "gbp": 39, "hkd": 405, "book": true, "note": "拉普蘭菜，炒馴鹿；星期日休息，要訂位", "src": "https://www.visitfinland.com/en/product/4a3518bd-3589-4db4-91cb-f81032c12b9e/restaurant-nili/", "map": "https://www.google.com/maps/search/?api=1&query=Nili%20Rovaniemi", "row": 41, "hours": "16:00–23:00", "voters": null, "votes": {}}, {"id": "rv-santa", "day": "10/11", "slot": "l", "name": "Santa's Salmon Place", "area": "rov", "local": "€15", "gbp": 13, "hkd": 135, "book": false, "note": "聖誕老人村柴火烤三文魚", "src": "https://uk.trip.com/restaurant/rovaniemi-1049.html", "map": "https://www.google.com/maps/search/?api=1&query=Santa%27s%20Salmon%20Place%20Rovaniemi", "row": 42, "hours": "11:00–18:00", "voters": null, "votes": {}}, {"id": "rv-roka", "day": "10/11", "slot": "d", "name": "Roka Street Bistro", "area": "rov", "local": "€29", "gbp": 25, "hkd": 260, "book": false, "note": "市中心 bistro，本地食材", "src": "https://uk.trip.com/travel-guide/foods/rovaniemi-1049-restaurant/ravintola-roka-street-bistro-30020420/", "map": "https://www.google.com/maps/search/?api=1&query=Roka%20Street%20Bistro%20Rovaniemi", "row": 43, "hours": "11:00–22:00", "voters": null, "votes": {}}, {"id": "hel-soppa", "day": "12/11", "slot": "l", "name": "SOUP+MORE（Old Market Hall）", "area": "hel", "local": "€14", "gbp": 12, "hkd": 125, "book": false, "note": "而家叫 SOUP+MORE；三文魚湯，€2 任食麵包；星期日休息", "src": "https://tablejourney.com/finland/helsinki/street-food/", "map": "https://www.google.com/maps/search/?api=1&query=SOUP%2BMORE%20Helsinki", "row": 44, "hours": "11:00–16:00", "voters": null, "votes": {}}, {"id": "hel-savotta", "day": "12/11", "slot": "d", "name": "Savotta", "area": "hel", "local": "€64", "gbp": 56, "hkd": 580, "book": true, "note": "芬蘭傳統菜套餐（馴鹿等）；要訂位", "src": "https://wanderlog.com/place/details/768073/restaurant-savotta", "map": "https://www.google.com/maps/search/?api=1&query=Savotta%20Helsinki", "row": 45, "hours": "12:00–23:00", "voters": null, "votes": {}}, {"id": "hel-hakaniemi", "day": "13/11", "slot": "l", "name": "Hakaniemi Market Hall 樓上", "area": "hel", "local": "€13", "gbp": 11, "hkd": 115, "book": false, "note": "樓上 lunch counter，芬蘭家常菜；星期六日休息", "src": "https://tablejourney.com/finland/helsinki/budget-eating/hakaniemi-hall-lunch/", "map": "https://www.google.com/maps/search/?api=1&query=Hakaniemi%20Market%20Hall%20Helsinki", "row": 46, "hours": "08:00–18:00", "voters": null, "votes": {}}, {"id": "hel-seahorse", "day": "13/11", "slot": "d", "name": "Sea Horse", "area": "hel", "local": "€55", "gbp": 48, "hkd": 500, "book": true, "note": "1933 年老字號，炸鯡魚、洋蔥牛扒；套餐 €55", "src": "https://www.seahorse.fi/en/our-menu", "map": "https://www.google.com/maps/search/?api=1&query=Sea%20Horse%20Helsinki", "row": 47, "hours": "12:00–23:00", "voters": null, "votes": {}}];
+
+/* ---------- state ---------- */
+let me=null; try{me=localStorage.getItem("afm-me")}catch(e){}
+let places=PLACES, modes=load("afm-modes"), checks=load("afm-checks"), db=null, canWrite=true, tab="vote", areaFilter="all";
+const $=s=>document.querySelector(s);
+function load(k){try{return JSON.parse(localStorage.getItem(k)||"{}")}catch(e){return {}}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function el(tag,attrs={},...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==="class")e.className=v;else if(k.startsWith("on"))e.addEventListener(k.slice(2),v);else if(v!==false&&v!=null)e.setAttribute(k,v===true?"":v)}for(const c of kids.flat()){if(c==null||c===false)continue;e.append(c.nodeType?c:document.createTextNode(c))}return e}
+function cellLink(row,col){return SHEET+"#gid=0&range="+col+row}
+
+/* ---------- voters ---------- */
+function renderVoters(){const box=$("#voters");box.replaceChildren(...VOTERS.map(v=>el("button",{class:"chip","aria-pressed":String(me===v.k),onclick:()=>{me=v.k;try{localStorage.setItem("afm-me",me)}catch(e){};renderAll()}},v.n)))}
+
+/* ---------- votes ---------- */
+function votersOf(p){return Array.isArray(p.voters)&&p.voters.length?VOTERS.filter(v=>p.voters.includes(v.k)):VOTERS}
+function vote(p,k){const x=(p.votes||{})[k];return x==="Y"?"y":x==="N"?"n":null}
+function statusOf(p){const vv=votersOf(p);const vs=vv.map(v=>vote(p,v.k));const yes=vs.filter(x=>x==="y").length,no=vs.filter(x=>x==="n").length;const N=vv.length;
+ if(no>0)return{k:"no",yes,no,txt:`${no} 人唔想 · 唔去`};
+ if(yes===N)return p.booked?{k:"booked",yes,no,txt:"已 book ✓"}:{k:"yes",yes,no,txt:p.book?"全員想去 · 去 book":"全員想去 · 直接去"};
+ return{k:"wait",yes,no,txt:`${yes}/${N} 想去`}}
+function flash(t){const n=$("#dbnote");n.textContent=t;n.hidden=false}
+
+function renderStats(){const s={yes:0,wait:0,no:0,booked:0};places.forEach(p=>s[statusOf(p).k]++);
+ $("#stats").replaceChildren(
+  el("div",{class:"stat"},el("span",{class:"n"},String(s.yes)),el("span",{class:"l"},"全員想去，未 book")),
+  el("div",{class:"stat"},el("span",{class:"n"},String(s.booked)),el("span",{class:"l"},"已 book")),
+  el("div",{class:"stat"},el("span",{class:"n"},String(s.wait)),el("span",{class:"l"},"未投完")),
+  el("div",{class:"stat"},el("span",{class:"n"},String(s.no)),el("span",{class:"l"},"有人唔想")));
+ $("#sync").replaceChildren("票數直接讀 Google Sheet：" + SYNCED + " ", el("button",{class:"chip",style:"font-size:12px;padding:1px 10px",onclick:loadVotes},"重新讀取"))}
+function renderFilters(){const opts=[["all","全部"],...Object.entries(AREAS)];$("#filters").replaceChildren(...opts.map(([k,n])=>el("button",{class:"chip","aria-pressed":String(areaFilter===k),onclick:()=>{areaFilter=k;renderPlaces();renderFilters()}},n)))}
+function placeCard(p){const st=statusOf(p);const card=el("article",{class:"card"+(st.k==="yes"||st.k==="booked"?" go":"")+(st.k==="no"?" drop":"")});
+ card.append(el("div",{class:"top"},el("h3",{},p.name),el("span",{class:"pill "+st.k},st.txt)));
+ card.append(el("div",{class:"meta"},el("span",{},SLOTN[p.slot]||""),el("span",{},AREAS[p.area]||""),p.book?el("span",{},"要訂位"):el("span",{},"唔使訂位")));
+ card.append(el("div",{class:"price"},"每人約 £"+p.gbp+" · HK$"+p.hkd+"（"+p.local+"）"));
+ if(p.hours)card.append(el("div",{class:"meta"},"當日營業："+p.hours));
+ if(p.note)card.append(el("p",{class:"note"},p.note));
+ const vv=votersOf(p);if(vv.length<VOTERS.length)card.append(el("p",{class:"hint",style:"margin:0"},"呢餐得 "+vv.map(v=>v.n).join("、")+" 投票"));
+ card.append(el("div",{class:"ballot"},...vv.map(v=>{const x=vote(p,v.k);return el("span",{class:"stamp"+(x==="y"?" y":x==="n"?" n":"")+(v.k===me?" mine":"")},(x==="y"?"✓ ":x==="n"?"✕ ":"· ")+v.n)})));
+ const eligible=me&&vv.some(v=>v.k===me);
+ const acts=el("div",{class:"actions"});
+ if(eligible)acts.append(el("a",{class:"btn primary",href:cellLink(p.row,VCOL[me]),target:"_blank",rel:"noopener"},"去 Sheet 投票 ↗"));
+ else if(!me)acts.append(el("span",{class:"hint"},"先喺上面揀你個名"));
+ if(p.map)acts.append(el("a",{class:"linkout",href:p.map,target:"_blank",rel:"noopener"},"Google Maps（有相）↗"));
+ if(p.src&&p.src!==p.map)acts.append(el("a",{class:"linkout",href:p.src,target:"_blank",rel:"noopener"},"資料來源 ↗"));
+ card.append(acts);return card}
+function renderPlaces(){const list=$("#placelist");const ps=places.filter(p=>areaFilter==="all"||p.area===areaFilter);
+ const byDay={};ps.forEach(p=>{(byDay[p.day]=byDay[p.day]||[]).push(p)});
+ const order=DAYS.filter(x=>areaFilter==="all"||x.area===areaFilter||byDay[x.d]).map(x=>x.d);
+ const so={b:0,l:1,d:2,x:3};
+ list.replaceChildren(...order.map(d=>{const info=DAYS[DAYIDX[d]]||{w:"",act:""};return el("div",{class:"daygroup"},
+  el("div",{class:"dayhead"},el("span",{class:"d"},d),el("span",{class:"w"},"星期"+info.w+" · "+info.act)),
+  ...(byDay[d]?byDay[d].sort((x,y)=>(so[x.slot]-so[y.slot])).map(placeCard):[el("p",{class:"empty",style:"margin:0"},"未有候選餐廳。想加就喺 Sheet 最底加一行，日期填 "+d+"。")]))}))}
+
+/* ---------- meals ---------- */
+function modeOf(m){return modes[m.id]||m.def}
+function setMode(m,val){modes[m.id]=val;save("afm-modes",modes);renderAll()}
+function renderMeals(){const box=$("#p-meal");
+ box.replaceChildren(el("p",{class:"sub"},"每餐揀「自煮 / 野餐 / 出街」，買餸清單會跟住自動計。改動只會儲喺你部機；全組定咗嘅安排以 WhatsApp 為準。"),
+ ...DAYS.map(day=>{const ms=MEALS.filter(m=>m.day===day.d);if(!ms.length)return null;
+  return el("div",{class:"mealday"},
+   el("div",{class:"dayhead",style:"border-top:0;padding-top:0"},el("span",{class:"d"},day.d),el("span",{class:"w"},"星期"+day.w)),
+   el("div",{class:"act"},day.act+" · 住："+day.sleep),
+   ...ms.map(m=>{const mode=modeOf(m);const opts=m.slot==="l"?[["cook","自煮"],["picnic","野餐"],["out","出街"]]:[["cook","自煮"],["out","出街"]];
+    const cands=places.filter(p=>p.day===m.day&&p.slot===m.slot);
+    return el("div",{class:"slot"},el("span",{class:"lbl"},SLOTN[m.slot]),
+     el("div",{class:"body"},
+      el("div",{class:"seg",role:"group"},...opts.map(([k,n])=>el("button",{"aria-pressed":String(mode===k),disabled:!canWrite&&!!db,onclick:()=>setMode(m,k)},n))),
+      m.hint?el("span",{class:"hint"},m.hint):null,
+      mode!=="out"&&m.run?el("span",{class:"runtag"},"→ "+RUNS[m.run].t):null,
+      mode==="out"&&cands.length?el("div",{class:"cands"},...cands.map(p=>{const st=statusOf(p);return el("span",{class:"cand"+(st.k==="yes"||st.k==="booked"?" go":"")},p.name+" · "+st.txt)})):null))}))}))}
+
+/* ---------- shopping ---------- */
+function computeRun(rid){const tot={},names={};const cover={b:0,picnic:0,d:0,x:0};
+ MEALS.forEach(m=>{if(m.run!==rid)return;const mode=modeOf(m);let r=null;
+  if(mode==="cook"){r=m.slot==="b"?RECIPE.cookb:m.slot==="x"?RECIPE.cookx:RECIPE.cookd;cover[m.slot==="l"?"lc":m.slot]=(cover[m.slot==="l"?"lc":m.slot]||0)+1}
+  else if(mode==="picnic"){r=RECIPE.picnic;cover.picnic++}
+  if(r)r.forEach(([k,n,q])=>{tot[k]=(tot[k]||0)+q*PEOPLE;names[k]=n})});
+ const items=Object.keys(tot).map(k=>{const p=PACK[k];const packs=Math.ceil(tot[k]/p.u-1e-9);return{k,name:names[k].replace(/（.*）/,""),qty:p.label(packs)}});
+ (STAPLES[rid]||[]).forEach((s,i)=>items.push({k:"st"+i,name:s,qty:"1"}));
+ return{items,cover}}
+function toggleCheck(rid,k,val){checks[rid+"--"+k]=val;save("afm-checks",checks);renderShop()}
+function renderShop(){const box=$("#p-shop");
+ box.replaceChildren(el("p",{class:"sub"},"份量按 5 人計：早餐每人 2 片包 + 1 隻蛋 + 1 杯 skyr；野餐每人 3 片包夾火腿芝士；晚餐每人 110g 主食 + 200g 肉 + 250g 菜。已向上取整到超市包裝。"),
+ ...Object.entries(RUNS).map(([rid,r])=>{const {items,cover}=computeRun(rid);const parts=[];if(cover.x)parts.push(cover.x+" 餐宵夜");if(cover.b)parts.push(cover.b+" 餐早餐");if(cover.picnic)parts.push(cover.picnic+" 餐野餐");if(cover.lc)parts.push(cover.lc+" 餐自煮午餐");if(cover.d)parts.push(cover.d+" 餐晚餐");
+  return el("div",{class:"run"},
+   el("div",{class:"head"},el("h2",{},r.t),el("span",{class:"mono hint"},r.when)),
+   el("div",{class:"cover"},r.where+(parts.length?" · 包 "+parts.join("、"):" · 而家冇餐要煮")),
+   r.warn?el("p",{class:"warn"},r.warn):null,
+   items.length&&parts.length?el("ul",{class:"items"},...items.map(it=>{const id=rid+"--"+it.k;const done=!!checks[id];const cb=el("input",{type:"checkbox",id:"cb-"+id,"aria-label":it.name});cb.checked=done;cb.disabled=!!db&&!canWrite;cb.addEventListener("change",()=>toggleCheck(rid,it.k,cb.checked));
+    return el("li",{class:done?"done":""},cb,el("span",{class:"name"},it.name),el("span",{class:"qty"},it.qty))})):el("p",{class:"empty"},"冇自煮餐，唔使買。"))}))}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{tab=b.dataset.tab;
+ document.querySelectorAll("nav.tabs button").forEach(x=>x.setAttribute("aria-selected",String(x===b)));
+ ["vote","meal","shop"].forEach(t=>$("#p-"+t).hidden=t!==tab)}));
+function renderAll(){renderVoters();renderStats();renderFilters();renderPlaces();renderMeals();renderShop()}
+
+$("#sheetlink").href=SHEET;
+renderAll();
+
+/* ---------- live votes from Google Sheet ---------- */
+function parseCSV(t){const rows=[];let row=[],f="",q=false;for(let i=0;i<t.length;i++){const c=t[i];
+ if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+ else if(c==='"')q=true;else if(c===","){row.push(f);f=""}else if(c==="\n"){row.push(f);rows.push(row);row=[];f=""}else if(c!=="\r")f+=c}
+ if(f||row.length){row.push(f);rows.push(row)}return rows}
+async function loadVotes(){SYNCED="讀緊…";renderStats();
+ try{const r=await fetch(SHEET.replace(/\/edit$/,"")+"/gviz/tq?tqx=out:csv&headers=1&gid=0&t="+Date.now());if(!r.ok)throw new Error(r.status);
+  const rows=parseCSV(await r.text());const keys=["roy","mark","cheuk","andrew","fatboy"];
+  places.forEach(p=>{const row=rows[p.row-1];if(!row)return;const v={};keys.forEach((k,i)=>{const x=(row[7+i]||"").trim().toUpperCase();if(x==="Y"||x==="N")v[k]=x});p.votes=v});
+  const d=new Date();SYNCED=d.toLocaleTimeString("zh-HK",{hour:"2-digit",minute:"2-digit"})+" 更新";$("#dbnote").hidden=true}
+ catch(e){SYNCED="讀唔到";flash("讀唔到 Google Sheet 嘅票數。Sheet 要 share 做「知道連結嘅任何人」先讀到；投票照樣可以撳「去 Sheet 投票」。")}
+ renderAll()}
+loadVotes();
+</script>
+</body>
+</html>
